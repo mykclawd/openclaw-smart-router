@@ -1,0 +1,87 @@
+{
+  "version": 1,
+  "updatedAt": "2026-07-12T13:24:00.000Z",
+  "models": [
+    {
+      "id": "deepseek-v4-flash",
+      "features": { "chat": true, "streaming": true, "coding": true, "vision": false, "tools": true, "structuredOutput": true },
+      "contextWindow": 1000000,
+      "latencyMs": 900,
+      "capabilities": { "general": 0.76, "coding": 0.82, "reasoning": 0.78, "writing": 0.68, "math": 0.80, "vision": 0, "tools": 0.75, "structuredOutput": 0.78 },
+      "notes": "Low-cost general, coding, and reasoning candidate."
+    },
+    {
+      "id": "qwen3.5-plus",
+      "features": { "chat": true, "streaming": true, "coding": true, "vision": false, "tools": true, "structuredOutput": true },
+      "contextWindow": 1000000,
+      "latencyMs": 1100,
+      "capabilities": { "general": 0.80, "coding": 0.84, "reasoning": 0.80, "writing": 0.74, "math": 0.81, "vision": 0, "tools": 0.80, "structuredOutput": 0.82 },
+      "notes": "Cost-efficient long-context candidate."
+    },
+    {
+      "id": "claude-haiku-4.5",
+      "features": { "chat": true, "streaming": true, "coding": true, "vision": true, "tools": true, "structuredOutput": true },
+      "contextWindow": 200000,
+      "latencyMs": 800,
+      "capabilities": { "general": 0.82, "coding": 0.82, "reasoning": 0.76, "writing": 0.86, "math": 0.72, "vision": 0.82, "tools": 0.84, "structuredOutput": 0.84 },
+      "notes": "Fast multimodal candidate."
+    },
+    {
+      "id": "grok-4.3",
+      "features": { "chat": true, "streaming": true, "coding": true, "vision": true, "tools": true, "structuredOutput": true },
+      "contextWindow": 1000000,
+      "latencyMs": 1300,
+      "delivery": { "messageToolReliable": true },
+      "capabilities": { "general": 0.88, "coding": 0.86, "reasoning": 0.88, "writing": 0.86, "math": 0.86, "vision": 0.86, "tools": 0.86, "structuredOutput": 0.84 },
+      "notes": "Balanced long-context multimodal candidate. Re-enabled for Discord message_tool delivery prompts after the external Discord delivery guard was added on 2026-07-12 to recover assistant-final-text misses."
+    },
+    {
+      "id": "kimi-k2.6",
+      "features": { "chat": true, "streaming": true, "coding": true, "vision": true, "tools": true, "structuredOutput": true },
+      "contextWindow": 256000,
+      "latencyMs": 1400,
+      "capabilities": { "general": 0.86, "coding": 0.89, "reasoning": 0.86, "writing": 0.80, "math": 0.84, "vision": 0.82, "tools": 0.88, "structuredOutput": 0.85 },
+      "notes": "Strong coding and agentic candidate."
+    },
+    {
+      "id": "glm-5.1",
+      "features": { "chat": true, "streaming": true, "coding": true, "vision": false, "tools": true, "structuredOutput": true },
+      "contextWindow": 200000,
+      "latencyMs": 1500,
+      "capabilities": { "general": 0.84, "coding": 0.86, "reasoning": 0.86, "writing": 0.78, "math": 0.84, "vision": 0, "tools": 0.85, "structuredOutput": 0.84 },
+      "notes": "Reasoning and coding candidate."
+    },
+    {
+      "id": "gemini-3-5-flash",
+      "features": { "chat": true, "streaming": true, "coding": true, "vision": true, "tools": true, "structuredOutput": true },
+      "contextWindow": 1000000,
+      "latencyMs": 900,
+      "capabilities": { "general": 0.87, "coding": 0.85, "reasoning": 0.84, "writing": 0.84, "math": 0.84, "vision": 0.90, "tools": 0.86, "structuredOutput": 0.87 },
+      "notes": "Fast long-context multimodal candidate."
+    },
+    {
+      "id": "claude-sonnet-5",
+      "features": { "chat": true, "streaming": true, "coding": true, "vision": false, "tools": true, "structuredOutput": true },
+      "contextWindow": 1000000,
+      "latencyMs": 1800,
+      "capabilities": { "general": 0.94, "coding": 0.95, "reasoning": 0.94, "writing": 0.96, "math": 0.90, "vision": 0, "tools": 0.94, "structuredOutput": 0.92 },
+      "notes": "High-capability coding, reasoning, and writing candidate."
+    },
+    {
+      "id": "gpt-5.5",
+      "features": { "chat": true, "streaming": true, "coding": true, "vision": true, "tools": true, "structuredOutput": true },
+      "contextWindow": 1000000,
+      "latencyMs": 2500,
+      "capabilities": { "general": 0.96, "coding": 0.94, "reasoning": 0.97, "writing": 0.93, "math": 0.96, "vision": 0.91, "tools": 0.92, "structuredOutput": 0.93 },
+      "notes": "Premium reasoning and multimodal candidate."
+    },
+    {
+      "id": "gpt-5.6-sol",
+      "features": { "chat": true, "streaming": true, "coding": true, "vision": true, "tools": true, "structuredOutput": true },
+      "contextWindow": 1050000,
+      "latencyMs": 2800,
+      "capabilities": { "general": 0.98, "coding": 0.98, "reasoning": 0.98, "writing": 0.95, "math": 0.97, "vision": 0.94, "tools": 0.97, "structuredOutput": 0.95 },
+      "notes": "Highest-capability premium candidate."
+    }
+  ]
+}

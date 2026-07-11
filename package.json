@@ -1,0 +1,42 @@
+{
+  "name": "openclaw-smart-router",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "description": "OpenClaw Smart Router v1: OpenAI-compatible model router for Surplus Intelligence.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mykcryptodev/openclaw-smart-router"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "node dist/index.js",
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "evaluate": "tsx src/evaluate-cli.ts"
+  },
+  "dependencies": {
+    "@fastify/cors": "latest",
+    "better-sqlite3": "latest",
+    "dotenv": "latest",
+    "fastify": "latest",
+    "zod": "latest"
+  },
+  "devDependencies": {
+    "@eslint/js": "latest",
+    "@types/better-sqlite3": "latest",
+    "@types/node": "latest",
+    "eslint": "latest",
+    "globals": "latest",
+    "tsx": "latest",
+    "typescript": "latest",
+    "typescript-eslint": "latest",
+    "vitest": "latest"
+  }
+}
