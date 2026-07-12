@@ -4,6 +4,25 @@ OpenClaw Smart Router is a small OpenAI-compatible TypeScript service that choos
 
 ## Quickstart
 
+### Option A: let your OpenClaw agent install it for you
+
+This repo ships a `SKILL.md`. If you're running OpenClaw, just tell your agent:
+
+```
+Install this skill and set up the OpenClaw Smart Router: https://github.com/mykclawd/openclaw-smart-router
+```
+
+Or install the skill directly via the CLI, then ask your agent to run the setup:
+
+```bash
+openclaw skills install git:mykclawd/openclaw-smart-router
+```
+
+The skill walks the agent through cloning, configuring, running, wiring into
+`openclaw.json`, and verifying — end to end.
+
+### Option B: do it by hand
+
 ```bash
 git clone https://github.com/mykclawd/openclaw-smart-router.git
 cd openclaw-smart-router
