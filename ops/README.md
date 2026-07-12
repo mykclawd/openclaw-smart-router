@@ -1,7 +1,7 @@
 # ops — operational guards
 
 External watchdogs that back up the router's routing-time protections. These run
-as host processes (pm2), not as part of the router service.
+as host processes (pm2/systemd), not as part of the router service.
 
 ## message_loop_guard.py
 
@@ -22,29 +22,37 @@ update; its hook API exposes no tool-result event and hooks cannot abort a turn)
 so it runs from the outside.
 
 **How it works.**
-- Tails session JSONL under `~/.openclaw/agents/*/sessions/`.
+- Tails session JSONL under `<state-root>/agents/*/sessions/` (state root defaults
+  to `$OPENCLAW_STATE_DIR` or `~/.openclaw`).
 - Fires when the last `--threshold` (default 5) tool results are all errors with
   the same signature **and** the newest error is recent (file-mtime prefilter +
   message-timestamp recency gate, both `--active-seconds`, default 180s), so a
   stale transcript that merely ends in old errors is never touched.
 - Aborts via `openclaw gateway call chat.abort --params '{"sessionKey":"…"}'`.
 - 120s cooldown per (session, signature); state in
-  `~/.openclaw/state/message-loop-guard.json`; log in
-  `~/.openclaw/workspace-general/logs/message-loop-guard.log`.
+  `<state-root>/state/message-loop-guard.json`; log in
+  `<state-root>/logs/message-loop-guard.log`.
 
-**Deploy.** The live copy runs from `~/.openclaw/workspace-general/scripts/`
-(alongside `discord_delivery_guard.py`) under pm2:
+No configuration is required — it discovers agents/sessions from the state dir and
+finds `openclaw` on `PATH`.
+
+**Run it (pm2):**
 
 ```bash
-cp ops/message_loop_guard.py ~/.openclaw/workspace-general/scripts/
-pm2 start ~/.openclaw/workspace-general/scripts/message_loop_guard.py \
+pm2 start ops/message_loop_guard.py \
   --name openclaw-message-loop-guard --interpreter python3 \
   -- --poll-seconds 5 --threshold 5
 pm2 save
 ```
 
-Dry-run a single scan without aborting anything:
+**Dry-run a single scan** (detects and logs, but aborts nothing):
 
 ```bash
 python3 ops/message_loop_guard.py --once --dry-run --log-file /dev/stdout
 ```
+
+**Options:** `--threshold` (consecutive identical failures before aborting),
+`--poll-seconds`, `--active-seconds` (recency window), `--cooldown-seconds`,
+`--state-root`, `--state-file`, `--log-file`, `--dry-run`, `--once`.
+
+Requires Python 3.9+ and the `openclaw` CLI on `PATH`.

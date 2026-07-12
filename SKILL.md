@@ -9,8 +9,8 @@ description: "Install & wire the open-source OpenClaw Smart Router (Surplus Inte
 
 The user wants to install the **OpenClaw Smart Router** (open-source, OpenAI-compatible
 model router for Surplus Intelligence) into their own OpenClaw gateway. This skill
-walks an agent through cloning, configuring, wiring into `openclaw.json`, and
-verifying — end to end, autonomously.
+walks an agent through cloning, configuring, wiring into `openclaw.json`,
+verifying, and installing the loop guard — end to end, autonomously.
 
 Repo: `https://github.com/mykclawd/openclaw-smart-router` (MIT licensed).
 
@@ -31,6 +31,8 @@ you hardcoding one model for every request. Falls through transparently
   but every request will fail upstream.
 - Somewhere to run a long-lived process: `pm2`, `systemd`, Docker, or a screen/tmux
   session. Do not run it as a one-off foreground `npm run dev` in production.
+- Python 3.9+ and the `openclaw` CLI on `PATH` — for the loop guard in Step 7
+  (strongly recommended; prevents runaway token-burn loops).
 
 ## Step 1 — Clone and install
 
@@ -150,6 +152,39 @@ a test message routes through it (check response headers
 `x-openclaw-router-selected-model` and `x-openclaw-router-routed` if you have
 raw HTTP visibility, or just watch `/routing-history` on the router's own
 dashboard at `http://127.0.0.1:8787/dashboard`).
+
+## Step 7 — Install the loop guard (strongly recommended)
+
+The router's `registry/models.json` `delivery.messageToolReliable` flags keep
+*known-bad* models off the visible message-delivery path — but that's a denylist.
+A new or unflagged model can still emit a malformed tool call that OpenClaw's
+message runner rejects, and OpenClaw caps neither repeated tool failures nor agent
+turns, so the agent can loop on the same failing call forever and burn tokens.
+
+`ops/message_loop_guard.py` is the model-independent backstop: it watches session
+transcripts and aborts a stuck run via `chat.abort` once it sees N consecutive
+identical tool failures (recency-gated so stale transcripts are never touched). It
+runs as a host process because it can't live inside OpenClaw (that package is wiped
+on update; its hook API exposes no tool-result event and hooks can't abort a turn).
+
+No configuration needed — it discovers agents/sessions under `$OPENCLAW_STATE_DIR`
+(or `~/.openclaw`) and finds `openclaw` on `PATH`. Install alongside the router:
+
+```bash
+pm2 start ops/message_loop_guard.py \
+  --name openclaw-message-loop-guard --interpreter python3 \
+  -- --poll-seconds 5 --threshold 5
+pm2 save
+```
+
+Verify it's watching (aborts nothing; just detects + logs):
+
+```bash
+python3 ops/message_loop_guard.py --once --dry-run --log-file /dev/stdout
+```
+
+Requires Python 3.9+ and the `openclaw` CLI on `PATH`. See `ops/README.md` for
+tuning options (`--threshold`, `--active-seconds`, `--cooldown-seconds`).
 
 ## Common failure modes
 

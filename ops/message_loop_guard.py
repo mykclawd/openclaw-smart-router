@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import subprocess
 import time
@@ -33,10 +34,13 @@ from pathlib import Path
 from typing import Any
 
 
-DEFAULT_STATE_ROOT = Path("/home/mike/.openclaw")
+# Portable defaults: honor an explicit OpenClaw state dir (set by --profile/--dev),
+# otherwise fall back to ~/.openclaw. No user-specific paths are baked in.
+DEFAULT_STATE_ROOT = Path(os.environ.get("OPENCLAW_STATE_DIR") or Path.home() / ".openclaw")
 DEFAULT_STATE_FILE = DEFAULT_STATE_ROOT / "state" / "message-loop-guard.json"
-DEFAULT_LOG_FILE = DEFAULT_STATE_ROOT / "workspace-general" / "logs" / "message-loop-guard.log"
-OPENCLAW_BIN_CANDIDATES = ("/home/mike/.npm-global/bin/openclaw", "openclaw")
+DEFAULT_LOG_FILE = DEFAULT_STATE_ROOT / "logs" / "message-loop-guard.log"
+# Prefer whatever `openclaw` is on PATH; keep the npm-global location as a fallback.
+OPENCLAW_BIN_CANDIDATES = ("openclaw", os.path.expanduser("~/.npm-global/bin/openclaw"))
 _WS_RE = re.compile(r"\s+")
 
 

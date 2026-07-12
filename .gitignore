@@ -6,3 +6,7 @@ coverage
 *.db-*
 .DS_Store
 data/
+
+# Python (ops guards)
+__pycache__/
+*.pyc
