@@ -164,10 +164,19 @@ export class SmartRouter {
       const reasons: string[] = [];
       if (!hasFeature(candidate, 'chat')) reasons.push('chat unsupported');
       if (streaming && !hasFeature(candidate, 'streaming')) reasons.push('streaming unsupported');
-      if (analysis.coding && !hasFeature(candidate, 'coding')) reasons.push('coding capability required');
-      if (analysis.vision && !hasFeature(candidate, 'vision')) reasons.push('vision capability required');
+      // On a visible message_tool delivery turn the paramount requirement is delivering
+      // the text reliably, not the answering capability of the turn. The prompt analyzer
+      // scans the whole conversation, so a single historical image or code block can flag
+      // the turn as vision/coding/structured and exclude an otherwise delivery-reliable
+      // text model (e.g. claude-sonnet-5), forcing selection of a less-reliable model — or
+      // an empty eligible set. For delivery turns we therefore skip these answering-capability
+      // filters; vision/coding models still remain eligible and outscore text models whenever
+      // the capability is genuinely needed, so this only widens (never narrows) the pool.
+      const deliveryTurn = analysis.requiresMessageToolDelivery;
+      if (analysis.coding && !deliveryTurn && !hasFeature(candidate, 'coding')) reasons.push('coding capability required');
+      if (analysis.vision && !deliveryTurn && !hasFeature(candidate, 'vision')) reasons.push('vision capability required');
       if (analysis.tools && !hasFeature(candidate, 'tools')) reasons.push('tool calling required');
-      if (analysis.structuredOutput && !hasFeature(candidate, 'structuredOutput')) reasons.push('structured output required');
+      if (analysis.structuredOutput && !deliveryTurn && !hasFeature(candidate, 'structuredOutput')) reasons.push('structured output required');
       if (analysis.requiresMessageToolDelivery && candidate.registry.delivery.messageToolReliable === false) reasons.push('message_tool delivery reliability required');
       if (analysis.fundsMovementRisk && candidate.registry.capabilities.reasoning < MIN_FUNDS_REASONING_CAPABILITY) reasons.push('funds movement requires reasoning-capable model');
       if (!messageContextFits(candidate, analysis)) reasons.push('context window too small');

@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-07-12T13:24:00.000Z",
+  "updatedAt": "2026-07-12T14:45:00.000Z",
   "models": [
     {
       "id": "deepseek-v4-flash",
@@ -64,24 +64,27 @@
       "features": { "chat": true, "streaming": true, "coding": true, "vision": false, "tools": true, "structuredOutput": true },
       "contextWindow": 1000000,
       "latencyMs": 1800,
+      "delivery": { "messageToolReliable": true },
       "capabilities": { "general": 0.94, "coding": 0.95, "reasoning": 0.94, "writing": 0.96, "math": 0.90, "vision": 0, "tools": 0.94, "structuredOutput": 0.92 },
-      "notes": "High-capability coding, reasoning, and writing candidate."
+      "notes": "High-capability coding, reasoning, and writing candidate. Explicitly marked message_tool-reliable: proven stable delivery target (112/112 successful message-tool deliveries observed as of 2026-07-12)."
     },
     {
       "id": "gpt-5.5",
       "features": { "chat": true, "streaming": true, "coding": true, "vision": true, "tools": true, "structuredOutput": true },
       "contextWindow": 1000000,
       "latencyMs": 2500,
+      "delivery": { "messageToolReliable": false },
       "capabilities": { "general": 0.96, "coding": 0.94, "reasoning": 0.97, "writing": 0.93, "math": 0.96, "vision": 0.91, "tools": 0.92, "structuredOutput": 0.93 },
-      "notes": "Premium reasoning and multimodal candidate."
+      "notes": "Premium reasoning and multimodal candidate. NOT message_tool-reliable: on 2026-07-12 it repeatedly emitted the message(action=send) tool call with schema-default poll fields populated (pollDurationSeconds=1, pollOptionIndex=1), which the OpenClaw message runner rejects as accidental poll creation, producing an infinite retry/token-burn loop in the #development Discord channel. Excluded from visible message_tool delivery until proven stable."
     },
     {
       "id": "gpt-5.6-sol",
       "features": { "chat": true, "streaming": true, "coding": true, "vision": true, "tools": true, "structuredOutput": true },
       "contextWindow": 1050000,
       "latencyMs": 2800,
+      "delivery": { "messageToolReliable": false },
       "capabilities": { "general": 0.98, "coding": 0.98, "reasoning": 0.98, "writing": 0.95, "math": 0.97, "vision": 0.94, "tools": 0.97, "structuredOutput": 0.95 },
-      "notes": "Highest-capability premium candidate."
+      "notes": "Highest-capability premium candidate. Conservatively marked NOT message_tool-reliable: same GPT-5.x family and tool-calling behavior as gpt-5.5, which caused the 2026-07-12 message_tool poll-field loop. gpt-5.6-sol was the next-highest-utility eligible model in that incident, so leaving it reliable would let the loop simply migrate here. Flip to true only after verifying it emits message(action=send) without spurious poll fields."
     }
   ]
 }

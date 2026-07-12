@@ -248,6 +248,67 @@ describe('OpenClaw Smart Router server', () => {
     ]));
   });
 
+  it('delivers via a reliable text model when a delivery turn is misclassified as vision (2026-07-12 gpt-5.5 loop regression)', async () => {
+    // Reproduces the #development infinite-loop incident: a long conversation contained a
+    // historical image, so a plain message_tool delivery turn was classified category=vision.
+    // That excluded the reliable text model (claude-sonnet-5 -> here cheap-fast) for "vision
+    // capability required", leaving only the vision-capable but message_tool-unreliable model
+    // (gpt-5.5 -> here code-pro), which looped forever emitting spurious poll fields.
+    const visionDeliveryRegistry = {
+      ...registry,
+      models: registry.models.map((model) => {
+        if (model.id === 'cheap-fast') {
+          // Reliable text-only delivery target (no vision). Stands in for claude-sonnet-5.
+          return {
+            ...model,
+            features: { ...model.features, tools: true },
+            capabilities: { ...model.capabilities, tools: 0.7 },
+          };
+        }
+        if (model.id === 'code-pro') {
+          // Vision-capable but message_tool-unreliable. Stands in for gpt-5.5.
+          return { ...model, delivery: { messageToolReliable: false } };
+        }
+        return model;
+      }),
+    };
+    const { fetchImpl, calls } = makeFetch();
+    const ctx = await makeApp(fetchImpl, {}, visionDeliveryRegistry);
+    apps.push(ctx.cleanup);
+
+    const response = await ctx.app.inject({
+      method: 'POST',
+      url: '/v1/chat/completions',
+      payload: {
+        model: 'auto',
+        messages: [{
+          role: 'user',
+          content: 'Delivery: Final assistant text is not automatically delivered in this run. Use the `message` tool to send the final user-visible answer.\n\n[image] (screenshot shared earlier in this thread)\n\nSay ping.',
+        }],
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+    // Delivery must land on the reliable text model, never the unreliable vision model.
+    expect(response.headers['x-openclaw-router-selected-model']).toBe('cheap-fast');
+    const chatCall = calls.find((call) => call.url.endsWith('/chat/completions'));
+    expect(chatCall?.body.model).toBe('cheap-fast');
+
+    const history = JSON.parse((await ctx.app.inject({ method: 'GET', url: '/routing-history?limit=1' })).body);
+    const decision = history.data[0].decision;
+    // The misclassification is still present (vision detected)...
+    expect(decision.analysis.vision).toBe(true);
+    expect(decision.analysis.requiresMessageToolDelivery).toBe(true);
+    // ...but for a delivery turn it must NOT exclude the reliable text model for vision.
+    expect(decision.rejectedModels).not.toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: 'cheap-fast', reasons: expect.arrayContaining(['vision capability required']) }),
+    ]));
+    // The unreliable model is still excluded on reliability grounds.
+    expect(decision.rejectedModels).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: 'code-pro', reasons: expect.arrayContaining(['message_tool delivery reliability required']) }),
+    ]));
+  });
+
   it('routes funds movement prompts away from cheap low-reasoning models', async () => {
     const fundsRegistry = {
       ...registry,
