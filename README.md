@@ -5,7 +5,7 @@ OpenClaw Smart Router is a small OpenAI-compatible TypeScript service that choos
 ## Quickstart
 
 ```bash
-git clone https://github.com/mykcryptodev/openclaw-smart-router.git
+git clone https://github.com/mykclawd/openclaw-smart-router.git
 cd openclaw-smart-router
 npm install
 cp .env.example .env

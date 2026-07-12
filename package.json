@@ -7,7 +7,7 @@
   "description": "OpenClaw Smart Router v1: OpenAI-compatible model router for Surplus Intelligence.",
   "repository": {
     "type": "git",
-    "url": "https://github.com/mykcryptodev/openclaw-smart-router"
+    "url": "https://github.com/mykclawd/openclaw-smart-router"
   },
   "engines": {
     "node": ">=22"
