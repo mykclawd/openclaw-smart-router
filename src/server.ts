@@ -68,6 +68,23 @@ function annotateChatCompletionJson(json: unknown, selectedModel: string): unkno
   return body;
 }
 
+function extractUsage(json: unknown): { promptTokens: number | null; completionTokens: number | null } {
+  if (!json || typeof json !== 'object') return { promptTokens: null, completionTokens: null };
+  const usage = (json as { usage?: { prompt_tokens?: number; completion_tokens?: number } }).usage;
+  return {
+    promptTokens: typeof usage?.prompt_tokens === 'number' ? usage.prompt_tokens : null,
+    completionTokens: typeof usage?.completion_tokens === 'number' ? usage.completion_tokens : null,
+  };
+}
+
+function estimateCostUsd(promptTokens: number | null, completionTokens: number | null, inputCostPerMTok: number | undefined, outputCostPerMTok: number | undefined): number | null {
+  if (promptTokens == null && completionTokens == null) return null;
+  if (inputCostPerMTok == null && outputCostPerMTok == null) return null;
+  const inputCost = promptTokens != null && inputCostPerMTok != null ? (promptTokens / 1e6) * inputCostPerMTok : 0;
+  const outputCost = completionTokens != null && outputCostPerMTok != null ? (completionTokens / 1e6) * outputCostPerMTok : 0;
+  return inputCost + outputCost;
+}
+
 function annotateSseEvent(event: string, selectedModel: string, alreadyAnnotated: boolean): { event: string; annotated: boolean } {
   let annotated = alreadyAnnotated;
   const lines = event.split('\n').map((line) => {
@@ -289,7 +306,10 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<{ app: Fa
           reader.releaseLock();
         }
         const latencyMs = Date.now() - started;
-        historyStore.finish(requestId, 'success', latencyMs);
+        historyStore.finish(requestId, {
+          status: 'success',
+          latencyMs,
+        });
         metrics.recordLatency(latencyMs);
         return reply;
       }
@@ -299,20 +319,37 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<{ app: Fa
       reply.header('content-type', contentType);
       const text = await upstreamResponse.text();
       let body = text;
+      let promptTokens: number | null = null;
+      let completionTokens: number | null = null;
       try {
         const json = JSON.parse(text);
         body = JSON.stringify(annotateChatCompletionJson(json, decision.selectedModel));
+        const usage = extractUsage(json);
+        promptTokens = usage.promptTokens;
+        completionTokens = usage.completionTokens;
       } catch {
         // upstream returned non-JSON; forward as-is
       }
       const latencyMs = Date.now() - started;
-      historyStore.finish(requestId, 'success', latencyMs);
+      const estimatedCostUsd = estimateCostUsd(
+        promptTokens,
+        completionTokens,
+        decision.selectedModelPrice?.inputCostPerMTok,
+        decision.selectedModelPrice?.outputCostPerMTok,
+      );
+      historyStore.finish(requestId, {
+        status: 'success',
+        latencyMs,
+        promptTokens,
+        completionTokens,
+        estimatedCostUsd,
+      });
       metrics.recordLatency(latencyMs);
       return reply.status(upstreamResponse.status).send(body);
     } catch (error) {
       const latencyMs = Date.now() - started;
       if (error instanceof OpenAIError && error.type === 'upstream_error') metrics.recordUpstreamError();
-      try { historyStore.finish(requestId, 'error', latencyMs, (error as Error).message); } catch { /* history row may not exist */ }
+      try { historyStore.finish(requestId, { status: 'error', latencyMs, errorMessage: (error as Error).message }); } catch { /* history row may not exist */ }
       return sendOpenAIError(reply, error as Error);
     }
   });

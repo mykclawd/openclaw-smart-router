@@ -131,6 +131,7 @@ export interface RoutingDecision {
   rejectedModels: Array<{ id: string; reasons: string[] }>;
   analysis: PromptAnalysis;
   scores: Record<string, ScoreBreakdown>;
+  selectedModelPrice?: { inputCostPerMTok?: number; outputCostPerMTok?: number };
   reason: string;
   createdAt: string;
 }
@@ -163,5 +164,8 @@ export interface HistoryRow {
   status: string;
   latency_ms: number | null;
   error_message: string | null;
+  prompt_tokens: number | null;
+  completion_tokens: number | null;
+  estimated_cost_usd: number | null;
   decision_json: string;
 }

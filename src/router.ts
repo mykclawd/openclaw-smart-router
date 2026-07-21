@@ -234,6 +234,7 @@ export class SmartRouter {
       }
       const scores = this.scoreCandidates([explicit], prices, analysis);
       const decision = this.makeDecision(requestId, requestedModel, explicit.id, false, [explicit.id], built.rejected, analysis, scores, 'explicit eligible model honored');
+      decision.selectedModelPrice = explicit.price;
       return { decision, upstreamRequest: clampOutputTokens(request, explicit) };
     }
 
@@ -255,6 +256,7 @@ export class SmartRouter {
       scores,
       `selected highest utility model ${selected.id}`,
     );
+    decision.selectedModelPrice = selected.price;
     return { decision, upstreamRequest: clampOutputTokens(request, selected) };
   }
 

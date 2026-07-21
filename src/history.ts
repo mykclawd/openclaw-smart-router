@@ -14,6 +14,15 @@ export interface HistoryStartInput {
   decision: RoutingDecision;
 }
 
+export interface HistoryFinishInput {
+  status: 'success' | 'error';
+  latencyMs: number;
+  errorMessage?: string | null;
+  promptTokens?: number | null;
+  completionTokens?: number | null;
+  estimatedCostUsd?: number | null;
+}
+
 export interface ModelStats {
   selected_model: string;
   requests: number;
@@ -31,6 +40,9 @@ export interface StatsSummary {
     avg_latency_ms: number | null;
     feedback_count: number;
     avg_rating: number | null;
+    total_prompt_tokens: number | null;
+    total_completion_tokens: number | null;
+    total_estimated_cost_usd: number | null;
   };
   models: Array<ModelStats & { errors: number; last_used: string | null }>;
   categories: Array<{ category: string; requests: number }>;
@@ -57,6 +69,9 @@ export class HistoryStore {
         status TEXT NOT NULL DEFAULT 'started',
         latency_ms INTEGER,
         error_message TEXT,
+        prompt_tokens INTEGER,
+        completion_tokens INTEGER,
+        estimated_cost_usd REAL,
         decision_json TEXT NOT NULL
       );
       CREATE INDEX IF NOT EXISTS idx_routing_history_created_at ON routing_history(created_at DESC);
@@ -70,6 +85,21 @@ export class HistoryStore {
       );
       CREATE INDEX IF NOT EXISTS idx_feedback_request_id ON feedback(request_id);
     `);
+    this.migrateAddTokenColumns();
+  }
+
+  private migrateAddTokenColumns(): void {
+    const columns = this.db.pragma('table_info(routing_history)') as Array<{ name: string }>;
+    const names = new Set(columns.map((column) => column.name));
+    if (!names.has('prompt_tokens')) {
+      this.db.exec('ALTER TABLE routing_history ADD COLUMN prompt_tokens INTEGER');
+    }
+    if (!names.has('completion_tokens')) {
+      this.db.exec('ALTER TABLE routing_history ADD COLUMN completion_tokens INTEGER');
+    }
+    if (!names.has('estimated_cost_usd')) {
+      this.db.exec('ALTER TABLE routing_history ADD COLUMN estimated_cost_usd REAL');
+    }
   }
 
   insertStart(input: HistoryStartInput): void {
@@ -90,10 +120,23 @@ export class HistoryStore {
     );
   }
 
-  finish(requestId: string, status: 'success' | 'error', latencyMs: number, errorMessage: string | null = null): void {
+  finish(requestId: string, status: 'success' | 'error', latencyMs: number, errorMessage?: string | null): void;
+  finish(requestId: string, input: HistoryFinishInput): void;
+  finish(requestId: string, input: 'success' | 'error' | HistoryFinishInput, latencyMs?: number, errorMessage: string | null = null): void {
+    const opts: HistoryFinishInput = typeof input === 'string'
+      ? { status: input, latencyMs: latencyMs!, errorMessage }
+      : input;
     this.db.prepare(`
-      UPDATE routing_history SET status = ?, latency_ms = ?, error_message = ? WHERE request_id = ?
-    `).run(status, Math.round(latencyMs), errorMessage, requestId);
+      UPDATE routing_history SET status = ?, latency_ms = ?, error_message = ?, prompt_tokens = ?, completion_tokens = ?, estimated_cost_usd = ? WHERE request_id = ?
+    `).run(
+      opts.status,
+      Math.round(opts.latencyMs),
+      opts.errorMessage ?? null,
+      opts.promptTokens ?? null,
+      opts.completionTokens ?? null,
+      opts.estimatedCostUsd ?? null,
+      requestId,
+    );
   }
 
   list(limit = 100): HistoryRow[] {
@@ -138,9 +181,12 @@ export class HistoryStore {
       SELECT COUNT(*) AS requests,
              SUM(routed) AS routed,
              SUM(CASE WHEN status = 'error' THEN 1 ELSE 0 END) AS errors,
-             AVG(latency_ms) AS avg_latency_ms
+             AVG(latency_ms) AS avg_latency_ms,
+             SUM(prompt_tokens) AS total_prompt_tokens,
+             SUM(completion_tokens) AS total_completion_tokens,
+             SUM(estimated_cost_usd) AS total_estimated_cost_usd
       FROM routing_history
-    `).get() as { requests: number; routed: number | null; errors: number | null; avg_latency_ms: number | null };
+    `).get() as { requests: number; routed: number | null; errors: number | null; avg_latency_ms: number | null; total_prompt_tokens: number | null; total_completion_tokens: number | null; total_estimated_cost_usd: number | null };
     const feedbackTotals = this.db.prepare(`
       SELECT COUNT(*) AS feedback_count, AVG(rating) AS avg_rating FROM feedback
     `).get() as { feedback_count: number; avg_rating: number | null };
@@ -174,6 +220,9 @@ export class HistoryStore {
         avg_latency_ms: totals.avg_latency_ms,
         feedback_count: feedbackTotals.feedback_count,
         avg_rating: feedbackTotals.avg_rating,
+        total_prompt_tokens: totals.total_prompt_tokens,
+        total_completion_tokens: totals.total_completion_tokens,
+        total_estimated_cost_usd: totals.total_estimated_cost_usd,
       },
       models,
       categories,
