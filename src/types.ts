@@ -74,6 +74,7 @@ export const ChatCompletionRequestSchema = z.object({
   response_format: z.any().optional(),
   max_tokens: z.number().int().positive().optional(),
   max_completion_tokens: z.number().int().positive().optional(),
+  stream_options: z.object({ include_usage: z.boolean().optional() }).passthrough().optional(),
 }).passthrough();
 export type ChatCompletionRequest = z.infer<typeof ChatCompletionRequestSchema>;
 

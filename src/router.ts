@@ -110,6 +110,8 @@ function clampOutputTokens(request: ChatCompletionRequest, candidate: CandidateM
     model: candidate.id,
     max_tokens: request.max_tokens == null ? undefined : Math.min(request.max_tokens, maxOutputTokens),
     max_completion_tokens: request.max_completion_tokens == null ? undefined : Math.min(request.max_completion_tokens, maxOutputTokens),
+    // Request the trailing usage chunk on streamed responses so token/cost tracking works for streaming too.
+    stream_options: request.stream ? { ...(request.stream_options ?? {}), include_usage: true } : request.stream_options,
   };
 }
 

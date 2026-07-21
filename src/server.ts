@@ -85,15 +85,21 @@ function estimateCostUsd(promptTokens: number | null, completionTokens: number |
   return inputCost + outputCost;
 }
 
-function annotateSseEvent(event: string, selectedModel: string, alreadyAnnotated: boolean): { event: string; annotated: boolean } {
+function annotateSseEvent(event: string, selectedModel: string, alreadyAnnotated: boolean): { event: string; annotated: boolean; usage: { promptTokens: number | null; completionTokens: number | null } | null } {
   let annotated = alreadyAnnotated;
+  let usage: { promptTokens: number | null; completionTokens: number | null } | null = null;
   const lines = event.split('\n').map((line) => {
     if (!line.startsWith('data:')) return line;
     const data = line.slice(5).trimStart();
     if (!data || data === '[DONE]') return line;
     try {
-      const json = JSON.parse(data) as { model?: string; choices?: Array<{ delta?: { content?: unknown }; message?: { content?: unknown } }> };
+      const json = JSON.parse(data) as {
+        model?: string;
+        choices?: Array<{ delta?: { content?: unknown }; message?: { content?: unknown } }>;
+        usage?: { prompt_tokens?: number; completion_tokens?: number };
+      };
       json.model = selectedModel;
+      if (json.usage) usage = extractUsage(json);
       if (!annotated) {
         for (const choice of json.choices ?? []) {
           if (choice.delta && typeof choice.delta.content === 'string') {
@@ -113,13 +119,24 @@ function annotateSseEvent(event: string, selectedModel: string, alreadyAnnotated
       return line;
     }
   });
-  return { event: lines.join('\n'), annotated };
+  return { event: lines.join('\n'), annotated, usage };
 }
 
-async function pipeAnnotatedSseStream(reader: ReadableStreamDefaultReader<Uint8Array>, selectedModel: string, write: (chunk: string | Buffer) => void): Promise<void> {
+async function pipeAnnotatedSseStream(
+  reader: ReadableStreamDefaultReader<Uint8Array>,
+  selectedModel: string,
+  write: (chunk: string | Buffer) => void,
+): Promise<{ promptTokens: number | null; completionTokens: number | null }> {
   const decoder = new TextDecoder();
   let buffer = '';
   let annotated = false;
+  let promptTokens: number | null = null;
+  let completionTokens: number | null = null;
+  const applyUsage = (usage: { promptTokens: number | null; completionTokens: number | null } | null) => {
+    if (!usage) return;
+    if (usage.promptTokens != null) promptTokens = usage.promptTokens;
+    if (usage.completionTokens != null) completionTokens = usage.completionTokens;
+  };
   while (true) {
     const { done, value } = await reader.read();
     if (done) break;
@@ -129,14 +146,17 @@ async function pipeAnnotatedSseStream(reader: ReadableStreamDefaultReader<Uint8A
     for (const event of events) {
       const result = annotateSseEvent(event, selectedModel, annotated);
       annotated = result.annotated;
+      applyUsage(result.usage);
       write(`${result.event}\n\n`);
     }
   }
   buffer += decoder.decode();
   if (buffer) {
     const result = annotateSseEvent(buffer, selectedModel, annotated);
+    applyUsage(result.usage);
     write(result.event);
   }
+  return { promptTokens, completionTokens };
 }
 
 function zodToOpenAIError(error: ZodError): OpenAIError {
@@ -299,16 +319,26 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<{ app: Fa
           return reply;
         }
         const reader = upstreamResponse.body.getReader();
+        let streamUsage: { promptTokens: number | null; completionTokens: number | null } = { promptTokens: null, completionTokens: null };
         try {
-          await pipeAnnotatedSseStream(reader, decision.selectedModel, (chunk) => reply.raw.write(chunk));
+          streamUsage = await pipeAnnotatedSseStream(reader, decision.selectedModel, (chunk) => reply.raw.write(chunk));
         } finally {
           reply.raw.end();
           reader.releaseLock();
         }
         const latencyMs = Date.now() - started;
+        const streamEstimatedCostUsd = estimateCostUsd(
+          streamUsage.promptTokens,
+          streamUsage.completionTokens,
+          decision.selectedModelPrice?.inputCostPerMTok,
+          decision.selectedModelPrice?.outputCostPerMTok,
+        );
         historyStore.finish(requestId, {
           status: 'success',
           latencyMs,
+          promptTokens: streamUsage.promptTokens,
+          completionTokens: streamUsage.completionTokens,
+          estimatedCostUsd: streamEstimatedCostUsd,
         });
         metrics.recordLatency(latencyMs);
         return reply;
