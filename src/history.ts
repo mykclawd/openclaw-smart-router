@@ -30,6 +30,7 @@ export interface ModelStats {
   avg_latency_ms: number | null;
   avg_rating: number | null;
   feedback_count: number;
+  total_estimated_cost_usd: number | null;
 }
 
 export interface StatsSummary {
@@ -198,7 +199,8 @@ export class HistoryStore {
              AVG(rh.latency_ms) AS avg_latency_ms,
              MAX(rh.created_at) AS last_used,
              fb.avg_rating AS avg_rating,
-             COALESCE(fb.feedback_count, 0) AS feedback_count
+             COALESCE(fb.feedback_count, 0) AS feedback_count,
+             SUM(rh.estimated_cost_usd) AS total_estimated_cost_usd
       FROM routing_history rh
       LEFT JOIN (
         SELECT rh2.selected_model AS model, AVG(f.rating) AS avg_rating, COUNT(*) AS feedback_count

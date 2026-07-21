@@ -31,7 +31,7 @@ export const DASHBOARD_HTML = `<!doctype html>
 <div class="tiles" id="tiles"></div>
 <h2>Models</h2>
 <div class="wrap"><table id="models"><thead><tr>
-  <th>Model</th><th>Requests</th><th>Success</th><th>Errors</th><th>Avg latency</th><th>Feedback</th><th>Avg rating</th><th>Last used</th>
+  <th>Model</th><th>Requests</th><th>Success</th><th>Errors</th><th>Avg latency</th><th>Feedback</th><th>Avg rating</th><th>Est. cost</th><th>Last used</th>
 </tr></thead><tbody></tbody></table></div>
 <h2>Recent decisions</h2>
 <div class="wrap"><table id="history"><thead><tr>
@@ -43,6 +43,7 @@ function esc(value) {
 }
 function fmtMs(ms) { return ms == null ? '—' : Math.round(ms) + ' ms'; }
 function fmtRating(rating) { return rating == null ? '—' : Number(rating).toFixed(2); }
+function fmtCost(usd) { return usd == null ? '—' : '$' + Number(usd).toFixed(4); }
 function tile(label, value, cls) {
   return '<div class="tile"><div class="label">' + esc(label) + '</div><div class="value ' + (cls || '') + '">' + esc(value) + '</div></div>';
 }
@@ -61,12 +62,15 @@ async function refresh() {
       tile('Errors', totals.errors, totals.errors > 0 ? 'err' : 'ok') +
       tile('Avg latency', fmtMs(totals.avg_latency_ms)) +
       tile('Feedback', totals.feedback_count) +
-      tile('Avg rating', fmtRating(totals.avg_rating));
+      tile('Avg rating', fmtRating(totals.avg_rating)) +
+      tile('Est. cost', fmtCost(totals.total_estimated_cost_usd)) +
+      tile('Prompt tok', totals.total_prompt_tokens ?? '—') +
+      tile('Completion tok', totals.total_completion_tokens ?? '—');
     document.querySelector('#models tbody').innerHTML = stats.models.map((row) =>
       '<tr><td>' + esc(row.selected_model) + '</td><td>' + row.requests + '</td><td class="ok">' + row.successes +
       '</td><td class="' + (row.errors > 0 ? 'err' : 'muted') + '">' + row.errors + '</td><td>' + fmtMs(row.avg_latency_ms) +
-      '</td><td>' + row.feedback_count + '</td><td>' + fmtRating(row.avg_rating) + '</td><td class="muted">' + esc(row.last_used || '—') + '</td></tr>'
-    ).join('') || '<tr><td colspan="8" class="muted">No requests yet</td></tr>';
+      '</td><td>' + row.feedback_count + '</td><td>' + fmtRating(row.avg_rating) + '</td><td>' + fmtCost(row.total_estimated_cost_usd) + '</td><td class="muted">' + esc(row.last_used || '—') + '</td></tr>'
+    ).join('') || '<tr><td colspan="9" class="muted">No requests yet</td></tr>';
     document.querySelector('#history tbody').innerHTML = history.data.map((row) =>
       '<tr><td class="muted">' + esc(row.created_at) + '</td><td>' + esc(row.requested_model) + '</td><td>' + esc(row.selected_model) +
       '</td><td>' + (row.routed ? 'yes' : 'no') + '</td><td>' + esc(row.category) +
