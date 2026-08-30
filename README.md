@@ -109,9 +109,29 @@ Rate a routed request so future routing learns from outcomes:
 
 JSON summary for dashboards: totals (requests, routed, errors, avg latency, feedback), per-model rows (success/error counts, avg latency, avg rating, last used), and category breakdown.
 
+### `GET /payments/balance`
+
+Surplus account balance for deposit-based billing, proxied from `GET /v1/payments/deposit-address`/`/v1/payments/balance` upstream and cached for `CACHE_TTL_MS`:
+
+```json
+{
+  "balance_usdc": 1635.51,
+  "allowance_usdc": 90.14,
+  "pending_deposit_usdc": 0,
+  "deposit_address": "0x…",
+  "deposit_chain_id": 8453,
+  "deposit_token_address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+  "deposit_min_confirmations": 20,
+  "account_status": "active",
+  "auto_topup_enabled": true
+}
+```
+
+`balance_usdc` is the spendable deposit balance — inference draws down from it. `allowance_usdc` reflects the legacy ERC-20 approval flow and is kept for visibility only. When the deposit can't cover a request, Surplus returns HTTP 402 and the router forwards it with an added hint to top up USDC on Base to `deposit_address`.
+
 ### `GET /dashboard`
 
-Self-contained HTML dashboard (no build step, auto-refreshes every 10s) rendering `/stats` and `/routing-history`.
+Self-contained HTML dashboard (no build step, auto-refreshes every 10s) rendering `/stats`, `/payments/balance` (Surplus deposit tile, red below 10 USDC), and `/routing-history`.
 
 ### `GET /config/weights` and `PUT /config/weights`
 

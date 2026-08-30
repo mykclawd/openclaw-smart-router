@@ -591,6 +591,50 @@ describe('OpenClaw Smart Router server', () => {
     expect(invalid.statusCode).toBe(400);
   });
 
+  it('exposes the Surplus deposit balance at /payments/balance', async () => {
+    const { fetchImpl } = makeFetch({
+      '/payments/balance': jsonResponse({
+        balance_usdc: '1635511955',
+        allowance_usdc: '90140989',
+        pending_deposit_usdc: '0',
+        deposit_address: '0xd083bbc9f72bf493e2e27e08243aaf3e006f8739',
+        deposit_chain_id: 8453,
+        deposit_token_address: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
+        deposit_min_confirmations: 20,
+        account_status: 'active',
+        auto_topup_enabled: true,
+      }),
+    });
+    const ctx = await makeApp(fetchImpl);
+    apps.push(ctx.cleanup);
+
+    const response = await ctx.app.inject({ method: 'GET', url: '/payments/balance' });
+    expect(response.statusCode).toBe(200);
+    const body = JSON.parse(response.body);
+    expect(body.balance_usdc).toBeCloseTo(1635.511955);
+    expect(body.deposit_address).toBe('0xd083bbc9f72bf493e2e27e08243aaf3e006f8739');
+    expect(body.deposit_chain_id).toBe(8453);
+    expect(body.account_status).toBe('active');
+  });
+
+  it('annotates upstream 402s with deposit top-up guidance', async () => {
+    const { fetchImpl } = makeFetch({
+      '/chat/completions': jsonResponse({ error: { message: 'Insufficient balance' } }, 402),
+    });
+    const ctx = await makeApp(fetchImpl);
+    apps.push(ctx.cleanup);
+
+    const response = await ctx.app.inject({
+      method: 'POST',
+      url: '/v1/chat/completions',
+      payload: { model: 'auto', messages: [{ role: 'user', content: 'hello' }] },
+    });
+    expect(response.statusCode).toBe(402);
+    const body = JSON.parse(response.body);
+    expect(body.error.type).toBe('payment_required');
+    expect(body.error.message).toContain('deposit');
+  });
+
   it('serves health and prometheus metrics', async () => {
     const { fetchImpl } = makeFetch();
     const ctx = await makeApp(fetchImpl);

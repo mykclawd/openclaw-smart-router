@@ -249,6 +249,28 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<{ app: Fa
 
   app.get('/stats', async () => historyStore.statsSummary());
 
+  // Surplus deposit-based billing: expose the account's deposit balance so
+  // operators (and the dashboard) can see spendable funds without hitting the
+  // Surplus API directly. Cached by SurplusClient for cacheTtlMs.
+  app.get('/payments/balance', async (_request, reply) => {
+    try {
+      const balance = await surplusClient.getBalance();
+      return reply.send({
+        balance_usdc: balance.balanceUsdc == null ? null : balance.balanceUsdc / 1e6,
+        allowance_usdc: balance.allowanceUsdc == null ? null : balance.allowanceUsdc / 1e6,
+        pending_deposit_usdc: balance.pendingDepositUsdc == null ? null : balance.pendingDepositUsdc / 1e6,
+        deposit_address: balance.depositAddress,
+        deposit_chain_id: balance.depositChainId,
+        deposit_token_address: balance.depositTokenAddress,
+        deposit_min_confirmations: balance.depositMinConfirmations,
+        account_status: balance.accountStatus,
+        auto_topup_enabled: balance.autoTopupEnabled,
+      });
+    } catch (error) {
+      return sendOpenAIError(reply, error as Error);
+    }
+  });
+
   app.get('/config/weights', async () => ({ weights: router.getWeights() }));
 
   app.put('/config/weights', async (request, reply) => {

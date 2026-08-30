@@ -49,14 +49,20 @@ function tile(label, value, cls) {
 }
 async function refresh() {
   try {
-    const [statsRes, historyRes] = await Promise.all([
+    const [statsRes, historyRes, balanceRes] = await Promise.all([
       fetch('/stats'),
       fetch('/routing-history?limit=50'),
+      fetch('/payments/balance'),
     ]);
     const stats = await statsRes.json();
     const history = await historyRes.json();
+    const balance = balanceRes.ok ? await balanceRes.json() : null;
     const totals = stats.totals;
+    const depositUsdc = balance && balance.balance_usdc != null ? Number(balance.balance_usdc) : null;
+    const depositLabel = depositUsdc == null ? '—' : depositUsdc.toFixed(2) + ' USDC';
+    const depositCls = depositUsdc == null ? 'muted' : depositUsdc < 10 ? 'err' : 'ok';
     document.getElementById('tiles').innerHTML =
+      tile('Surplus deposit', depositLabel, depositCls) +
       tile('Requests', totals.requests) +
       tile('Routed', totals.routed) +
       tile('Errors', totals.errors, totals.errors > 0 ? 'err' : 'ok') +
