@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-07-19T00:56:00.000Z",
+  "updatedAt": "2026-09-06T23:20:07Z",
   "models": [
     {
       "id": "deepseek-v4-flash",
@@ -15,16 +15,16 @@
       "contextWindow": 1000000,
       "latencyMs": 900,
       "capabilities": {
-        "general": 0.76,
-        "coding": 0.82,
-        "reasoning": 0.78,
-        "writing": 0.68,
-        "math": 0.8,
+        "general": 0.632,
+        "coding": 0.724,
+        "reasoning": 0.724,
+        "writing": 0.639,
+        "math": 0.475,
         "vision": 0,
-        "tools": 0.75,
+        "tools": 0.579,
         "structuredOutput": 0.78
       },
-      "notes": "Low-cost general, coding, and reasoning candidate."
+      "notes": "Low-cost general, coding, and reasoning candidate. | AIIQ 2026-08-24: iq=113(#42) rel=101"
     },
     {
       "id": "qwen3.5-plus",
@@ -63,16 +63,16 @@
       "contextWindow": 200000,
       "latencyMs": 800,
       "capabilities": {
-        "general": 0.82,
-        "coding": 0.82,
-        "reasoning": 0.76,
-        "writing": 0.86,
-        "math": 0.72,
+        "general": 0.254,
+        "coding": 0.25,
+        "reasoning": 0.25,
+        "writing": 0.189,
+        "math": 0.254,
         "vision": 0.82,
-        "tools": 0.84,
+        "tools": 0.175,
         "structuredOutput": 0.84
       },
-      "notes": "Fast multimodal candidate."
+      "notes": "Fast multimodal candidate. | AIIQ 2026-08-24: iq=98(#84) rel=105"
     },
     {
       "id": "grok-4.3",
@@ -90,16 +90,16 @@
         "messageToolReliable": true
       },
       "capabilities": {
-        "general": 0.88,
-        "coding": 0.86,
-        "reasoning": 0.88,
-        "writing": 0.86,
-        "math": 0.86,
+        "general": 0.675,
+        "coding": 0.474,
+        "reasoning": 0.474,
+        "writing": 0.738,
+        "math": 0.656,
         "vision": 0.86,
-        "tools": 0.86,
+        "tools": 0.439,
         "structuredOutput": 0.84
       },
-      "notes": "Balanced long-context multimodal candidate. Re-enabled for Discord message_tool delivery prompts after the external Discord delivery guard was added on 2026-07-12 to recover assistant-final-text misses."
+      "notes": "Balanced long-context multimodal candidate. Re-enabled for Discord message_tool delivery prompts after the external Discord delivery guard was added on 2026-07-12 to recover assistant-final-text misses. | AIIQ 2026-08-24: iq=115(#36) rel=111"
     },
     {
       "id": "kimi-k2.6",
@@ -114,16 +114,16 @@
       "contextWindow": 256000,
       "latencyMs": 1400,
       "capabilities": {
-        "general": 0.86,
-        "coding": 0.89,
-        "reasoning": 0.86,
-        "writing": 0.8,
-        "math": 0.84,
+        "general": 0.789,
+        "coding": 0.75,
+        "reasoning": 0.75,
+        "writing": 0.754,
+        "math": 0.795,
         "vision": 0.82,
-        "tools": 0.88,
+        "tools": 0.842,
         "structuredOutput": 0.85
       },
-      "notes": "Strong coding and agentic candidate."
+      "notes": "Strong coding and agentic candidate. | AIIQ 2026-08-24: iq=119(#24) rel=114"
     },
     {
       "id": "kimi-k3",
@@ -139,16 +139,16 @@
       "maxOutputTokens": 131072,
       "latencyMs": 2000,
       "capabilities": {
-        "general": 0.91,
-        "coding": 0.91,
-        "reasoning": 0.92,
-        "writing": 0.85,
-        "math": 0.9,
+        "general": 0.886,
+        "coding": 0.767,
+        "reasoning": 0.767,
+        "writing": 0.861,
+        "math": 0.91,
         "vision": 0.85,
-        "tools": 0.9,
+        "tools": 0.886,
         "structuredOutput": 0.88
       },
-      "notes": "Kimi K3 — Moonshot 1M-context multimodal model with always-on reasoning. Premium tier ($3/$15 per M). Added 2026-07-19; message_tool delivery not yet observed in production."
+      "notes": "Kimi K3 \u2014 Moonshot 1M-context multimodal model with always-on reasoning. Premium tier ($3/$15 per M). Added 2026-07-19; message_tool delivery not yet observed in production. | AIIQ 2026-08-24: iq=123(#17) rel=113"
     },
     {
       "id": "glm-5.1",
@@ -163,16 +163,65 @@
       "contextWindow": 200000,
       "latencyMs": 1500,
       "capabilities": {
-        "general": 0.84,
-        "coding": 0.86,
-        "reasoning": 0.86,
-        "writing": 0.78,
-        "math": 0.84,
+        "general": 0.649,
+        "coding": 0.716,
+        "reasoning": 0.716,
+        "writing": 0.615,
+        "math": 0.582,
         "vision": 0,
-        "tools": 0.85,
+        "tools": 0.825,
         "structuredOutput": 0.84
       },
-      "notes": "Reasoning and coding candidate."
+      "notes": "Reasoning and coding candidate. | AIIQ 2026-08-24: iq=114(#39) rel=105"
+    },
+    {
+      "id": "glm-5.2",
+      "features": {
+        "chat": true,
+        "streaming": true,
+        "coding": true,
+        "vision": false,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextWindow": 1048576,
+      "latencyMs": 1500,
+      "capabilities": {
+        "general": 0.825,
+        "coding": 0.914,
+        "reasoning": 0.914,
+        "writing": 0.787,
+        "math": 0.828,
+        "vision": 0,
+        "tools": 0.904,
+        "structuredOutput": 0.87
+      },
+      "notes": "GLM 5.2, Zhipu long-context reasoning and coding upgrade over GLM 5.1, 1M context vs 5.1's 200K. Added 2026-08-10 per myk. Priced $0.76/$2.42 per M tokens on Surplus. message_tool delivery not yet observed in production, no delivery.messageToolReliable flag yet. | AIIQ 2026-08-24: iq=120(#20) rel=108"
+    },
+    {
+      "id": "glm-5.3",
+      "features": {
+        "chat": true,
+        "streaming": true,
+        "coding": true,
+        "vision": false,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextWindow": 1000000,
+      "maxOutputTokens": 131072,
+      "latencyMs": 1500,
+      "capabilities": {
+        "general": 0.845,
+        "coding": 0.93,
+        "reasoning": 0.93,
+        "writing": 0.8,
+        "math": 0.845,
+        "vision": 0,
+        "tools": 0.915,
+        "structuredOutput": 0.88
+      },
+      "notes": "GLM 5.3, Z.ai reasoning upgrade over GLM 5.2 for complex software engineering and long-horizon agent tasks; same 1M context. Added 2026-09-01 per myk request. Live Surplus pricing confirmed 2026-09-01: $1.40/$4.40 per M input/output, $0.26/M cache read. Capability scores are PROVISIONAL \u2014 extrapolated from glm-5.2 with a modest incremental bump, no AIIQ benchmark run observed for this model yet; replace with real AIIQ numbers when available. message_tool delivery not yet observed in production, no delivery.messageToolReliable flag yet."
     },
     {
       "id": "gemini-3-5-flash",
@@ -214,16 +263,16 @@
         "messageToolReliable": true
       },
       "capabilities": {
-        "general": 0.94,
-        "coding": 0.95,
-        "reasoning": 0.94,
-        "writing": 0.96,
-        "math": 0.9,
+        "general": 0.912,
+        "coding": 0.905,
+        "reasoning": 0.905,
+        "writing": 0.877,
+        "math": 0.918,
         "vision": 0,
-        "tools": 0.94,
+        "tools": 0.939,
         "structuredOutput": 0.92
       },
-      "notes": "High-capability coding, reasoning, and writing candidate. Explicitly marked message_tool-reliable: proven stable delivery target (112/112 successful message-tool deliveries observed as of 2026-07-12)."
+      "notes": "High-capability coding, reasoning, and writing candidate. Explicitly marked message_tool-reliable: proven stable delivery target (112/112 successful message-tool deliveries observed as of 2026-07-12). | AIIQ 2026-08-24: iq=125(#12) rel=115"
     },
     {
       "id": "gpt-5.5",
@@ -241,16 +290,16 @@
         "messageToolReliable": false
       },
       "capabilities": {
-        "general": 0.96,
-        "coding": 0.94,
-        "reasoning": 0.97,
-        "writing": 0.93,
-        "math": 0.96,
+        "general": 0.974,
+        "coding": 0.974,
+        "reasoning": 0.974,
+        "writing": 0.934,
+        "math": 0.975,
         "vision": 0.91,
-        "tools": 0.92,
+        "tools": 0.947,
         "structuredOutput": 0.93
       },
-      "notes": "Premium reasoning and multimodal candidate. NOT message_tool-reliable: on 2026-07-12 it repeatedly emitted the message(action=send) tool call with schema-default poll fields populated (pollDurationSeconds=1, pollOptionIndex=1), which the OpenClaw message runner rejects as accidental poll creation, producing an infinite retry/token-burn loop in the #development Discord channel. Excluded from visible message_tool delivery until proven stable."
+      "notes": "Premium reasoning and multimodal candidate. NOT message_tool-reliable: on 2026-07-12 it repeatedly emitted the message(action=send) tool call with schema-default poll fields populated (pollDurationSeconds=1, pollOptionIndex=1), which the OpenClaw message runner rejects as accidental poll creation, producing an infinite retry/token-burn loop in the #development Discord channel. Excluded from visible message_tool delivery until proven stable. | AIIQ 2026-08-24: iq=133(#4) rel=123"
     },
     {
       "id": "gpt-5.6-sol",
@@ -268,16 +317,214 @@
         "messageToolReliable": false
       },
       "capabilities": {
-        "general": 0.98,
-        "coding": 0.98,
-        "reasoning": 0.98,
-        "writing": 0.95,
-        "math": 0.97,
+        "general": 0.991,
+        "coding": 0.991,
+        "reasoning": 0.991,
+        "writing": 0.984,
+        "math": 1.0,
         "vision": 0.94,
-        "tools": 0.97,
+        "tools": 0.991,
         "structuredOutput": 0.95
       },
-      "notes": "Highest-capability premium candidate. Conservatively marked NOT message_tool-reliable: same GPT-5.x family and tool-calling behavior as gpt-5.5, which caused the 2026-07-12 message_tool poll-field loop. gpt-5.6-sol was the next-highest-utility eligible model in that incident, so leaving it reliable would let the loop simply migrate here. Flip to true only after verifying it emits message(action=send) without spurious poll fields."
+      "notes": "Highest-capability premium candidate. Conservatively marked NOT message_tool-reliable: same GPT-5.x family and tool-calling behavior as gpt-5.5, which caused the 2026-07-12 message_tool poll-field loop. gpt-5.6-sol was the next-highest-utility eligible model in that incident, so leaving it reliable would let the loop simply migrate here. Flip to true only after verifying it emits message(action=send) without spurious poll fields. | AIIQ 2026-08-24: iq=136(#2) rel=124"
+    },
+    {
+      "id": "claude-opus-5",
+      "features": {
+        "chat": true,
+        "streaming": true,
+        "coding": true,
+        "vision": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "latencyMs": 2600,
+      "capabilities": {
+        "general": 0.982,
+        "coding": 0.966,
+        "reasoning": 0.966,
+        "writing": 0.992,
+        "math": 0.959,
+        "vision": 0.93,
+        "tools": 0.982,
+        "structuredOutput": 0.96
+      },
+      "notes": "Claude Opus 5 \u2014 Anthropic flagship, major gains over Opus 4.8 in agentic coding, knowledge work, and long-horizon reasoning. 1M context, 128K output, multimodal. Added 2026-07-25 per myk. Scored top-tier, so the router will prefer it for demanding coding/reasoning routes \u2014 note this is the premium $5/$25 tier. message_tool delivery not yet observed in production, so no delivery.messageToolReliable flag yet (Claude family, so likely reliable like claude-sonnet-5, but unproven). | AIIQ 2026-08-24: iq=134(#3) rel=119"
+    },
+    {
+      "id": "glm-5.3-flash",
+      "features": {
+        "chat": true,
+        "streaming": true,
+        "coding": true,
+        "vision": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextWindow": 1048576,
+      "maxOutputTokens": 131072,
+      "latencyMs": 600,
+      "capabilities": {
+        "general": 0.815,
+        "coding": 0.9,
+        "reasoning": 0.9,
+        "writing": 0.78,
+        "math": 0.815,
+        "vision": 0.8,
+        "tools": 0.89,
+        "structuredOutput": 0.87
+      },
+      "notes": "GLM 5.3 Flash, cheap/fast multimodal (text+image+video) variant of GLM 5.3, 1M context. Added 2026-09-01 per myk model sweep. Live Surplus pricing confirmed 2026-09-01: $0.075/$0.25 per M input/output, $0.015/M cache read. Capability scores PROVISIONAL - extrapolated from glm-5.3 with a modest flash-tier discount, no AIIQ run yet; replace with real numbers when available."
+    },
+    {
+      "id": "grok-4.6",
+      "features": {
+        "chat": true,
+        "streaming": true,
+        "coding": true,
+        "vision": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextWindow": 500000,
+      "maxOutputTokens": 200000,
+      "latencyMs": 1200,
+      "capabilities": {
+        "general": 0.72,
+        "coding": 0.55,
+        "reasoning": 0.55,
+        "writing": 0.77,
+        "math": 0.7,
+        "vision": 0.87,
+        "tools": 0.52,
+        "structuredOutput": 0.86
+      },
+      "notes": "Grok 4.6, xAI upgrade over Grok 4.3/4.5, 500K context, 200K max output, reasoning + web_search. Added 2026-09-01 per myk model sweep. Live Surplus pricing confirmed 2026-09-01: $2.00/$6.00 per M input/output, $0.50/M cache read. Capability scores PROVISIONAL - extrapolated from grok-4.3 with an incremental bump, no AIIQ run yet; replace with real numbers when available."
+    },
+    {
+      "id": "gemini-3.7-flash",
+      "features": {
+        "chat": true,
+        "streaming": true,
+        "coding": true,
+        "vision": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextWindow": 1048576,
+      "maxOutputTokens": 65536,
+      "latencyMs": 800,
+      "capabilities": {
+        "general": 0.885,
+        "coding": 0.87,
+        "reasoning": 0.86,
+        "writing": 0.855,
+        "math": 0.86,
+        "vision": 0.91,
+        "tools": 0.875,
+        "structuredOutput": 0.88
+      },
+      "notes": "Gemini 3.7 Flash, Google multimodal (text+image+video+file+audio) flash-tier upgrade over Gemini 3.5 Flash, 1M context, reasoning + web_search. Added 2026-09-01 per myk model sweep. Live Surplus pricing confirmed 2026-09-01: $0.75/$3.75 per M input/output, $0.075/M cache read. Capability scores PROVISIONAL - extrapolated from gemini-3-5-flash with a modest bump, no AIIQ run yet; replace with real numbers when available."
+    },
+    {
+      "id": "qwen3.8-flash",
+      "features": {
+        "chat": true,
+        "streaming": true,
+        "coding": true,
+        "vision": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextWindow": 1000000,
+      "maxOutputTokens": 131072,
+      "latencyMs": 700,
+      "capabilities": {
+        "general": 0.79,
+        "coding": 0.82,
+        "reasoning": 0.82,
+        "writing": 0.75,
+        "math": 0.8,
+        "vision": 0.78,
+        "tools": 0.8,
+        "structuredOutput": 0.84
+      },
+      "notes": "Qwen3.8 Flash, Alibaba cheap/fast multimodal (text+image+video) flash tier, 1M context. Added 2026-09-01 per myk model sweep. Live Surplus pricing confirmed 2026-09-01: $0.15/$0.47 per M input/output, $0.016/M cache read. Capability scores PROVISIONAL - extrapolated from qwen3.5-plus with a flash-tier discount, no AIIQ run yet; replace with real numbers when available."
+    },
+    {
+      "id": "qwen3.8-2.4t-a95b",
+      "features": {
+        "chat": true,
+        "streaming": true,
+        "coding": true,
+        "vision": false,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextWindow": 1000000,
+      "maxOutputTokens": 262144,
+      "latencyMs": 2000,
+      "capabilities": {
+        "general": 0.87,
+        "coding": 0.9,
+        "reasoning": 0.9,
+        "writing": 0.83,
+        "math": 0.88,
+        "vision": 0,
+        "tools": 0.87,
+        "structuredOutput": 0.89
+      },
+      "notes": "Qwen3.8 2.4T A95B, Alibaba flagship-scale MoE (2.4T total / 95B active), text-only, 1M context, 262K max output, reasoning. Added 2026-09-01 per myk model sweep. Live Surplus pricing confirmed 2026-09-01: $2.00/$6.00 per M input/output, $0.25/M cache read. Capability scores PROVISIONAL - extrapolated as a flagship tier above qwen3.5-plus, no AIIQ run yet; replace with real numbers when available."
+    },
+    {
+      "id": "gpt-6-astra",
+      "features": {
+        "chat": true,
+        "streaming": true,
+        "coding": true,
+        "vision": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextWindow": 1050000,
+      "latencyMs": 3200,
+      "capabilities": {
+        "general": 0.985,
+        "coding": 0.985,
+        "reasoning": 0.99,
+        "writing": 0.982,
+        "math": 0.995,
+        "vision": 0.95,
+        "tools": 0.985,
+        "structuredOutput": 0.95
+      },
+      "notes": "Premium OpenAI flagship-class model, added 2026-09-06 at owner request. Capability scores seeded from gpt-5.6-sol (same family tier); recalibrate after AIIQ eval. Same message_tool caution applies as gpt-5.5/gpt-5.6-sol until verified."
+    },
+    {
+      "id": "claude-fable-5.1",
+      "features": {
+        "chat": true,
+        "streaming": true,
+        "coding": true,
+        "vision": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextWindow": 1000000,
+      "latencyMs": 2600,
+      "capabilities": {
+        "general": 0.975,
+        "coding": 0.975,
+        "reasoning": 0.975,
+        "writing": 0.985,
+        "math": 0.96,
+        "vision": 0.9,
+        "tools": 0.975,
+        "structuredOutput": 0.94
+      },
+      "notes": "Claude Fable 5.1, added 2026-09-06 at owner request. Capability scores seeded from claude-sonnet-5 / claude-opus-5 tier; recalibrate after AIIQ eval."
     }
   ]
 }

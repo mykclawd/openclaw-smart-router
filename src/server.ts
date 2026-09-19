@@ -10,6 +10,7 @@ import type { AppConfig } from './config.js';
 import { loadConfig } from './config.js';
 import { RegistryStore } from './registry.js';
 import { SurplusClient } from './surplusClient.js';
+import { JevClient } from './jevClient.js';
 import { HistoryStore } from './history.js';
 import { Metrics } from './metrics.js';
 import { SmartRouter } from './router.js';
@@ -170,11 +171,15 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<{ app: Fa
   const surplusClient = new SurplusClient(config.surplusBaseUrl, config.surplusApiKey, config.cacheTtlMs, config.requestTimeoutMs, options.fetchImpl ?? fetch);
   const historyStore = new HistoryStore(config.sqlitePath);
   const metrics = new Metrics();
+  const jevClient = new JevClient(config.jevBaseUrl, config.jevApiKey, config.jevTimeoutMs, config.jevModel, options.fetchImpl ?? fetch, config.jevCacheTtlMs);
   const router = new SmartRouter(registryStore, surplusClient, historyStore, {
     routerModelIds: config.routerModelIds,
     utilityWeights: config.utilityWeights,
     userPreferences: config.userPreferences,
-  });
+    jevMode: config.jevMode,
+    jevMaxStateChars: config.jevMaxStateChars,
+    jevJitCatalog: config.jevJitCatalog,
+  }, jevClient);
 
   const app = Fastify({ logger: options.logger ?? { level: config.logLevel } });
   await app.register(cors, { origin: true });
@@ -186,7 +191,19 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<{ app: Fa
   }));
 
   app.get('/metrics', async (_request, reply) => {
-    return reply.header('content-type', 'text/plain; version=0.0.4; charset=utf-8').send(metrics.snapshot());
+    const jevCache = jevClient.cacheStats;
+    const extra = [
+      '# HELP openclaw_smart_router_jev_cache_hits_total jev classification cache hits.',
+      '# TYPE openclaw_smart_router_jev_cache_hits_total counter',
+      `openclaw_smart_router_jev_cache_hits_total ${jevCache.hits}`,
+      '# HELP openclaw_smart_router_jev_cache_misses_total jev classification cache misses.',
+      '# TYPE openclaw_smart_router_jev_cache_misses_total counter',
+      `openclaw_smart_router_jev_cache_misses_total ${jevCache.misses}`,
+      '# HELP openclaw_smart_router_jev_cache_entries Current jev classification cache entries.',
+      '# TYPE openclaw_smart_router_jev_cache_entries gauge',
+      `openclaw_smart_router_jev_cache_entries ${jevCache.size}`,
+    ].join('\n');
+    return reply.header('content-type', 'text/plain; version=0.0.4; charset=utf-8').send(`${metrics.snapshot()}${extra}\n`);
   });
 
   app.get('/v1/models', async (_request, reply) => {

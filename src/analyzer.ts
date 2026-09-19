@@ -48,6 +48,24 @@ function detectsFundsMovementRisk(lower: string): boolean {
   return includesAny(lower, fundActionTerms) && includesAny(lower, fundObjectTerms);
 }
 
+const codingTerms = [
+  'typescript', 'javascript', 'python', 'rust', 'golang', 'code', 'function', 'class ', 'debug', 'stack trace',
+  'compile', 'unit test', 'sql', 'regex', 'api endpoint', 'dockerfile', 'eslint', 'vitest', 'fastify',
+];
+
+/**
+ * Coding-keyword check over arbitrary text.
+ *
+ * Exported so the jev merge can run it against the SCOPED user turn. jev's domain Choice is
+ * relative — it returns exactly one of five options — so a genuine coding request it labels
+ * `analysis` ("why is this function slow?") would otherwise clear `analysis.coding` and disable the
+ * coding-capability filter. Unioning the two signals keeps that filter binding; a false positive
+ * there only requires the model to advertise a coding feature, which is the cheap direction to err.
+ */
+export function hasCodingKeywords(text: string): boolean {
+  return includesAny(text.toLowerCase(), codingTerms);
+}
+
 export function estimateTokens(text: string): number {
   return Math.ceil(text.length / 4);
 }
@@ -57,10 +75,7 @@ export function analyzePrompt(request: ChatCompletionRequest): PromptAnalysis {
   const lower = text.toLowerCase();
   const reasons: string[] = [];
 
-  const coding = includesAny(lower, [
-    'typescript', 'javascript', 'python', 'rust', 'golang', 'code', 'function', 'class ', 'debug', 'stack trace',
-    'compile', 'unit test', 'sql', 'regex', 'api endpoint', 'dockerfile', 'eslint', 'vitest', 'fastify',
-  ]);
+  const coding = hasCodingKeywords(lower);
   if (coding) reasons.push('coding keywords detected');
 
   const vision = JSON.stringify(request.messages).toLowerCase().includes('image_url') || lower.includes('[image]');

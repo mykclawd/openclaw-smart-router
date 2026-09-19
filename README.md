@@ -170,6 +170,79 @@ Default utility weights:
 
 Scores and reasons are stored per request in SQLite for explainability.
 
+## jev prompt classification
+
+The rule-based analyzer above scans the **entire** concatenated message array. Under OpenClaw that array is dominated by the system/runtime envelope, which contains the words `code`, `function`, `analyze`, `plan`, `send`, `token`, `wallet` and `transaction`. Measured over 2485 stored decisions on 2026-09-19:
+
+- 98.6% tripped "coding keywords detected"
+- 98.7% tripped "analysis/reasoning terms detected"
+- 95.6% tripped "funds movement or allowance risk detected"
+- 98.3% ended at `complexity == 1.00`
+
+Every flag fired on nearly every request, so the analyzer's output carried almost no information about the actual ask. The funds-risk flag is a hard eligibility filter (`MIN_FUNDS_REASONING_CAPABILITY = 0.90`), and 11 of the 21 registry models sit below that floor — so the false positive makes a capability gate binding on traffic that never touches funds.
+
+[jev](https://docs.typesafe.ai) (TypeSafe System One) replaces the three judgments the keyword matcher was failing at. Everything the request states structurally stays in code — jev is never asked what can be computed exactly:
+
+| Signal | Source |
+| --- | --- |
+| `tools`, `vision`, `structuredOutput` | the request body |
+| `estimatedContextTokens` | arithmetic |
+| `requiresMessageToolDelivery` | full-array string match (unchanged) |
+| reasoning tier (0–4) | jev `Score` |
+| funds movement | jev `Noul` |
+| domain | jev `Choice` |
+
+jev sees only the latest user turn with the envelope stripped (`src/promptScope.ts`). This matters for accuracy, not just cost: jev's documented failure mode #5 is degradation on large states full of irrelevant detail.
+
+Known limit of that scoping: it takes the latest `user` message only. Mid-conversation, when the latest turn is a bare `"yes, do it"`, jev classifies the acknowledgement rather than the task it refers to. The heuristic's structural signals (tools, vision, context size) still apply, but expect the reasoning tier to read low on those turns.
+
+Because `analysis.coding` is a hard filter and jev's domain Choice returns exactly one option, the merged `coding` flag is the **union** of jev's domain and a keyword check over the scoped text — a coding question jev labels `analysis` must not silently clear the coding-capability requirement.
+
+### Modes
+
+Set with `JEV_MODE`:
+
+- `off` — never call jev; pre-integration behaviour.
+- `shadow` *(default)* — call jev and persist its answers next to the heuristic's, but the **heuristic still decides**.
+- `live` — jev drives eligibility and scoring.
+
+The default is `shadow` deliberately. There is no ground truth yet: the `feedback` table is empty, and `routing_history` has never stored prompt text, so the 2485 pre-existing rows **cannot** be replayed offline. Shadow mode is what produces the comparison data; it records the scoped prompt so a labelled set can be built.
+
+```bash
+npm run jev:compare
+```
+
+Prints jev-vs-heuristic disagreement rates, tier and domain distributions, jev latency percentiles, and the fallback rate.
+
+This measures disagreement **volume, not correctness** — nothing in it says which classifier was right. Turning it into evidence means hand-labelling the captured `jev.analysis.state` values and scoring both against those labels.
+
+### Failure behaviour
+
+jev is on the critical path of every completion, so it fails open in every branch — timeout, 401, 422, 429, 529, network error, or malformed body all fall back to the keyword analyzer and the request proceeds. Failures are recorded in `decision_json` so the fallback rate is measurable. The jev call runs concurrently with the Surplus `/models` and `/prices` fetches, so it usually adds no wall-clock latency.
+
+The reasoning tier floor is an optimisation, not a safety gate: if no model meets it, the floor is dropped and the request retries rather than failing. The funds-movement gate is **not** relaxed that way — it exists to keep weak models away from real transactions.
+
+### Just-in-time capability check
+
+For the top tiers the router also requires the **live** Surplus listing to advertise `reasoning` in `supported_features`, rather than trusting the hand-maintained registry alone. This is the `scripts/pick_trench_model.py` gate applied per request instead of once a day. When a live entry omits `supported_features`, the check fails open.
+
+### Just-in-time catalog widening
+
+Surplus prices move, and the cheapest capable model for a given tier is often one nobody has hand-scored into the registry. In `live` mode, models present in the live catalog but missing from the registry get a **derived** entry built from the live listing's own metadata (`supported_features`, `context_length`, `architecture.input_modalities`, `supported_parameters`, `top_provider.max_completion_tokens`) and enter the candidate pool.
+
+Safety properties:
+
+- Live mode only. In `shadow` mode the heuristic decides, and widening there would let the known-noisy keyword classifier route traffic onto unvetted models.
+- Conservative derived capabilities (`0.4` across the board). A derived model must win on **price or latency** to be picked — it can never outrank a hand-scored model on capability. Set cost-heavy weights (`UTILITY_WEIGHTS` with a high `cost` share) if you want dynamic pricing to be decisive.
+- Text-to-text models only; non-chat modalities (image/video/audio generation, embeddings, TTS) are excluded at derivation.
+- The same gates apply as for registry models: reasoning tier floor, live `reasoning` feature check, funds-movement floor, context fit, price caps.
+
+Disable with `JEV_JIT_CATALOG=false` to route only across the hand-maintained registry.
+
+### Classification cache
+
+jev sits on the critical path of every completion (~400 ms cold). Recurring scoped prompts — cron jobs, identical health pings, client retries — are served from a short-TTL in-process cache (`JEV_CACHE_TTL_MS`, default 5 min) instead of re-calling jev. Only successful classifications are cached; failures always retry live, so a transient 529 can't pin the router to the heuristic. Hit/miss counters are exported on `/metrics` as `openclaw_smart_router_jev_cache_*`. Set `JEV_CACHE_TTL_MS=0` to disable.
+
 ## Offline weight evaluation
 
 ```bash
@@ -198,6 +271,14 @@ Important variables:
 | `REGISTRY_WATCH` | `true` | Auto-reload registry on file change (`false`/`0`/`no`/`off` disables) |
 | `UTILITY_WEIGHTS` | default JSON above | Explainable scoring weights |
 | `USER_PREFERENCES` | `{}` | Optional prefer/avoid/cost/latency preferences |
+| `JEV_MODE` | `shadow` | `off`, `shadow`, or `live` — see [jev prompt classification](#jev-prompt-classification) |
+| `JEV_API_KEY` | unset | Bearer token for jev (`TYPESAFE_API_KEY` also accepted). Without it jev is disabled and the keyword analyzer decides |
+| `JEV_BASE_URL` | `https://api.typesafe.ai/v1` | TypeSafe API base |
+| `JEV_MODEL` | `jev-latest` | Pin a version (e.g. `jev-1.13.0`) if you tune confidence thresholds |
+| `JEV_TIMEOUT_MS` | `1500` | jev timeout; on expiry the request falls back to the heuristic |
+| `JEV_MAX_STATE_CHARS` | `12000` | Cap on the scoped prompt sent to jev |
+| `JEV_CACHE_TTL_MS` | `300000` | Classification cache TTL in ms; `0` disables |
+| `JEV_JIT_CATALOG` | `true` | Live mode only: widen the candidate pool to live-catalog models with no registry entry |
 
 Example preference JSON:
 

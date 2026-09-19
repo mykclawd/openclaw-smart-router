@@ -19,7 +19,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "eslint .",
     "test": "vitest run",
-    "evaluate": "tsx src/evaluate-cli.ts"
+    "evaluate": "tsx src/evaluate-cli.ts",
+    "jev:compare": "tsx src/jev-compare-cli.ts"
   },
   "dependencies": {
     "@fastify/cors": "latest",

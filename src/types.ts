@@ -92,6 +92,43 @@ export interface PromptAnalysis {
   estimatedContextTokens: number;
   latency: 'low' | 'normal' | 'high';
   reasons: string[];
+  /**
+   * Minimum `capabilities.reasoning` a model must have, derived from jev's reasoning tier.
+   * Only set in JEV_MODE=live; undefined means no tier floor applies.
+   */
+  reasoningFloor?: number;
+}
+
+/**
+ * jev classifier output attached to every decision when JEV_MODE is shadow or live.
+ * In shadow mode this is recorded but NOT acted on, so the two classifiers can be compared on the
+ * same traffic. `applied` says which of the two actually drove the decision.
+ */
+export interface JevDecisionRecord {
+  mode: 'off' | 'shadow' | 'live';
+  applied: boolean;
+  latencyMs: number;
+  failure?: { kind: string; status?: number; message: string } | null;
+  analysis?: {
+    reasoningScore: number;
+    reasoningTier: number;
+    reasoningConfidence: number;
+    fundsMovement: boolean;
+    fundsMovementProbability: number;
+    domain: string;
+    domainConfidence: number;
+    strippedChars: number;
+    model: string;
+    /** The scoped prompt jev saw. Recorded so a labelled comparison set can be built — routing_history has never stored prompt text. */
+    state: string;
+  };
+  /** What the keyword heuristic said for the same request, for side-by-side comparison. */
+  heuristic: {
+    category: PromptCategory;
+    complexity: number;
+    coding: boolean;
+    fundsMovementRisk: boolean;
+  };
 }
 
 export interface LiveModel {
@@ -135,6 +172,7 @@ export interface RoutingDecision {
   selectedModelPrice?: { inputCostPerMTok?: number; outputCostPerMTok?: number };
   reason: string;
   createdAt: string;
+  jev?: JevDecisionRecord;
 }
 
 export const FeedbackRequestSchema = z.object({
